@@ -6,18 +6,35 @@ import com.dicefield.gose.run.exception.TimeoutException
  * Running commands.
  */
 class Runner {
+    {
+        runConfig = new RunConfig();
+    }
 
     protected static final int SLEEP_TIME_MS = 100
 
+    protected RunConfig runConfig;
+
     /**
-     * Run a command. See possible arguments in {@link com.dicefield.gose.run.RunConfig}
+     * Set RunConfig for the Runner instance.
+     * @param value
+     */
+    public void setRunConfig(RunConfig value) {
+        runConfig = value;
+    }
+
+    public RunConfig getRunConfig() {
+        return runConfig;
+    }
+
+    /**
+     * Run a command given RunConfig object
      *
      * @param args
      * @param cmd
      * @return
      */
-    public RunResult run(Map args, String ... cmd) {
-        RunConfig cfg = RunConfig.getFromMap(args)
+    public RunResult run(RunConfig cfg, String ... cmd) {
+        cfg = RunConfig.merge(cfg, runConfig)
 
         if (cfg.logCommand()) {
             Date d = new Date()
@@ -78,8 +95,26 @@ class Runner {
         }
     }
 
+    /**
+     * Run a command without any options. Global options applied.
+     * @param cmd
+     * @return
+     */
     public RunResult run(String ... cmd) {
         run([:], cmd)
+    }
+
+    /**
+     * Run a command. See possible arguments in {@link com.dicefield.gose.run.RunConfig}
+     * For example:
+     * <code>
+     *  run("echo", "abc", showOutput: true)
+     * </code>
+     * This options have higher priority comparing to the options set in {@link Runner#setRunConfig}
+     */
+    public RunResult run(Map args, String ... cmd) {
+        RunConfig cfg = RunConfig.getFromMap(args)
+        return run(cfg, cmd)
     }
 
 }

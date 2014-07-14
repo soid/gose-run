@@ -64,4 +64,31 @@ class RunnerTest {
         assert caught==false, "Timeout exception is caught though it shouldn't have caught"
     }
 
+    @Test
+    public void run_setRunConfig_localOption() {
+        RunConfig runConfig = new RunConfig()
+        runConfig.setTimeout(1)
+
+        // timeout should be overwritten by the local option
+        Runner r = new Runner()
+        r.run("sleep", "2", timeout: 3)
+    }
+
+    @Test
+    public void run_setRunConfig_objectOption() {
+        RunConfig runConfig = new RunConfig()
+        runConfig.setTimeout(1)
+
+        // timeout should be overwritten by the local option
+        Runner r = new Runner()
+        Boolean caught = false
+        try {
+            RunResult res = r.run("sleep", "2", timeout: 1)
+        } catch (TimeoutException e) {
+            caught = true
+        }
+
+        assert caught, "Timeout exception is not caught"
+    }
+
 }

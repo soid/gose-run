@@ -9,7 +9,7 @@ import java.util.logging.Logger
  *   - Set defaults;
  *   - Provide the options for the runners.
  */
-class RunConfig {
+class RunConfig implements Cloneable {
 
     protected static Map<String, List> options = [
             // format:
@@ -30,7 +30,7 @@ class RunConfig {
      * @param args
      * @return
      */
-    public static RunConfig getFromMap(Map args) {
+    static public RunConfig getFromMap(Map args) {
         RunConfig res = new RunConfig()
         for (String optionName : args.keySet()) {
 
@@ -40,59 +40,111 @@ class RunConfig {
 
             Object value = args.get(optionName)
 
-            // verify class
-            List<Class> possibleClasses = options.get(optionName)[1..-1]
-            Boolean verified = false
-            for (Class clz : possibleClasses) {
-                if (clz.isInstance(value)) {
-                    verified = true
-                    break
-                }
-            }
-
-            if (verified == false) {
-                throw new IllegalArgumentException("Invalid type for option '$optionName'."
-                        + "\nExpected: " + possibleClasses.join(", ")
-                        + "\nActual: " + value.getClass())
-            }
+            res.verifyOption(optionName, value)
 
             // alrighty, set the option
             res.values[optionName] = value
         }
 
-        // set default options
-        for (String optionName : options.keySet()) {
-            if ( ! res.values.containsKey(optionName)) {
-                res.values[optionName] = options.get(optionName).get(0)
-            }
-        }
-
         return res
     }
 
-    public Object getOption(String name) {
-        return values.get(name)
+    /**
+     * Merge two RunConfigs. One with higher priority, one with the lower priority.
+     *
+     * @param higherPriorityConfig
+     * @param lowerPriorityConfig
+     * @return
+     */
+    static public RunConfig merge(RunConfig higherPriorityConfig, RunConfig lowerPriorityConfig) {
+        RunConfig resRunConfig = lowerPriorityConfig.clone();
+        for (String optionName : higherPriorityConfig.values.keySet()) {
+            // overwrite
+            resRunConfig.values[optionName] = higherPriorityConfig.values[optionName]
+        }
+
+        return resRunConfig;
     }
+
+    public Object getOption(String name) {
+        if (values.containsKey(name)) {
+            return values.get(name)
+        } else {
+            // use the default
+            options.get(name).get(0)
+        }
+    }
+
+    public void setOption(String name, Object value) {
+        // TODO : verify name and type
+        if ( ! options.containsKey(name)) {
+            throw new IllegalArgumentException("Option '$name' is not available.")
+        }
+        verifyOption(name, value)
+        values[name] = value;
+    }
+
+    // getters / setters
 
     public int getTimeout() {
         // TODO: use constants
         return (int) getOption("timeout")
     }
 
+    public void setTimeout(int value) {
+        setOption("timeout", value)
+    }
+
     public Boolean showOutput() {
         return (Boolean) getOption("showOutput")
+    }
+
+    public void showOutput(Boolean value) {
+        setOption("showOutput", value)
     }
 
     public Boolean logCommand() {
         return (Boolean) getOption("logCommand")
     }
 
+    public void logCommand(Boolean value) {
+        setOption("logCommand", value)
+    }
+
     public Logger getLogger() {
         return getOption("logger")
     }
 
+    public void setLogger(Logger value) {
+        setOption("logger", value)
+    }
+
     public Level logLevel() {
         return getOption("logLevel")
+    }
+
+    public void logLevel(Level value) {
+        setOption("logLevel", value)
+    }
+
+    // private / protected
+
+    void verifyOption(String optionName, Object value) {
+        // verify class
+        List<Class> possibleClasses = options.get(optionName)[1..-1]
+        Boolean verified = false
+        for (Class clz : possibleClasses) {
+            if (clz.isInstance(value)) {
+                verified = true
+                break
+            }
+        }
+
+        if (verified == false) {
+            throw new IllegalArgumentException("Invalid type for option '$optionName'."
+                    + "\nExpected: " + possibleClasses.join(", ")
+                    + "\nActual: " + value.getClass())
+        }
     }
 
 }
