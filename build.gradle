@@ -1,6 +1,12 @@
 apply plugin: 'java'
 apply plugin: 'groovy'
 apply plugin: 'jacoco'
+apply plugin: 'maven'
+apply plugin: 'signing'
+
+group = "com.dicefield"
+archivesBaseName = "gose-run"
+version = "0.0.1"
 
 repositories {
     mavenCentral()
@@ -12,7 +18,76 @@ dependencies {
     testCompile 'org.testng:testng:6.8.8'
 }
 
+
 test {
     useTestNG()
 }
+
+//
+// Below is the configuration for maven central
+// See http://central.sonatype.org/pages/ossrh-guide.html
+// and http://central.sonatype.org/pages/gradle.html
+
+task javadocJar(type: Jar) {
+    classifier = 'javadoc'
+    from javadoc
+}
+
+task sourcesJar(type: Jar) {
+    classifier = 'sources'
+    from sourceSets.main.allSource
+}
+
+artifacts {
+    archives javadocJar, sourcesJar
+}
+
+signing {
+    sign configurations.archives
+}
+
+uploadArchives {
+    repositories {
+        mavenDeployer {
+            beforeDeployment { MavenDeployment deployment -> signing.signPom(deployment) }
+
+            repository(url: "https://oss.sonatype.org/service/local/staging/deploy/maven2/") {
+                authentication(userName: ossrhUsername, password: ossrhPassword)
+            }
+
+            snapshotRepository(url: "https://oss.sonatype.org/content/repositories/snapshots/") {
+                authentication(userName: ossrhUsername, password: ossrhPassword)
+            }
+
+            pom.project {
+                name 'Gose running library'
+                packaging 'jar'
+                description 'Library for easily running shell commands in Groovy'
+                url 'https://github.com/soid/gose-run'
+
+                scm {
+                    connection 'scm:git:https://github.com/soid/gose-run.git'
+                    developerConnection 'scm:git:https://github.com/soid/gose-run.git'
+                    url 'https://github.com/soid/gose-run'
+                }
+
+                licenses {
+                    license {
+                        name 'The Apache Software License, Version 2.0'
+                        url 'http://www.apache.org/licenses/LICENSE-2.0.txt'
+                    }
+                }
+
+                developers {
+                    developer {
+                        id 'soid'
+                        name 'Greg Temchenko'
+                        email 'soid@dicefield.com'
+                    }
+                }
+            }
+        }
+    }
+}
+
 
